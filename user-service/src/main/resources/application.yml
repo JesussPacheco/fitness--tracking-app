@@ -1,0 +1,61 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: user-service
+
+  # R2DBC Database Configuration
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5440/user_service_db  # Port 5440 to avoid conflicts
+    username: user_service_user
+    password: user_service_pass
+    pool:
+      initial-size: 5
+      max-size: 20
+      max-idle-time: 30m
+      validation-query: SELECT 1
+
+  # Redis Configuration
+  data:
+    redis:
+      host: localhost
+      port: 6380  # Using 6380 if 6379 is taken
+      password: redis_pass
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+
+  # Service Discovery Configuration
+  cloud:
+    consul:
+      host: localhost
+      port: 8500
+      discovery:
+        service-name: ${spring.application.name}
+        health-check-path: /actuator/health
+        health-check-interval: 10s
+        enabled: false  # Set to true when ready to register with Consul
+
+# Health Check Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+
+# Logging Configuration
+logging:
+  level:
+    root: INFO
+    com.fitness.userservice: DEBUG
+    io.r2dbc.postgresql: INFO
+    org.springframework.r2dbc: INFO

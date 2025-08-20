@@ -1,0 +1,63 @@
+services:
+  # User Service Database - Using port 5440
+  user-service-db:
+    image: postgres:15-alpine
+    container_name: user-service-db
+    environment:
+      POSTGRES_USER: user_service_user
+      POSTGRES_PASSWORD: user_service_pass
+      POSTGRES_DB: user_service_db
+    ports:
+      - "5440:5432"  # Changed to 5440 to avoid conflicts
+    volumes:
+      - user_db_data:/var/lib/postgresql/data
+    networks:
+      - fitness-network
+    restart: unless-stopped
+
+  # Redis - Check if 6379 is available
+  redis:
+    image: redis:7-alpine
+    container_name: fitness-redis
+    command: redis-server --requirepass redis_pass --appendonly yes
+    ports:
+      - "6380:6379"  # Using 6380 in case 6379 is taken
+    volumes:
+      - redis_data:/data
+    networks:
+      - fitness-network
+    restart: unless-stopped
+
+  # Consul
+  consul:
+    image: hashicorp/consul:1.16
+    container_name: fitness-consul
+    command: consul agent -dev -client=0.0.0.0 -ui
+    ports:
+      - "8500:8500"
+    networks:
+      - fitness-network
+    restart: unless-stopped
+
+  # Vault
+  vault:
+    image: hashicorp/vault:1.15
+    container_name: fitness-vault
+    cap_add:
+      - IPC_LOCK
+    ports:
+      - "8200:8200"
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: dev_token_123
+      VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
+    networks:
+      - fitness-network
+    restart: unless-stopped
+
+volumes:
+  user_db_data:
+  redis_data:
+
+networks:
+  fitness-network:
+    driver: bridge
